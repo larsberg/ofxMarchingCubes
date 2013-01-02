@@ -2,28 +2,17 @@
 //  ofxMarchingCubes.h
 //  ofxMarchingCubes
 //
-//  Created by lars berg on 12/28/12.
-//
-//
 
 /*
- TODO::
- -transform matrix
- -get worldposition
+TODO::
+ -get worldposition in grid
  -add iso value at world position
- 
- Done:
- -refactor vector filling and rendering
- -simple normal shader in example
- 
- the no cry sleep solution
- */
 
-/*
- ISSUES:
- -smooth normals are only correct for cube shaped voxels
+ 
+ISSUES:
  -seems like we should use openCL for this...
  */
+
 
 
 #pragma once
@@ -38,51 +27,38 @@ public:
 	
 	void setMaxVertexCount( int _maxVertexCount );
 	
-	void update(float _threshold );
+	void update();
+	void update(float _threshold){
+		threshold = _threshold;
+		update();
+	}
 	
-	void draw(){ drawArrays( &vertices, &normals, false );;}
-	void drawWireframe(){ drawArrays( &vertices, &normals, true );}
+	bool useVbo( bool _bUseVbo );
+	bool getUsingVbo(){		return bUseVbo;}
 	
-	void drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* _normals=NULL, bool wireframe=false);
-
+	void draw( GLenum renderType = GL_TRIANGLES );
+	void drawWireframe();
+	void drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* _normals=NULL );
+	void drawGrid( bool drawGridPoints=true);
+	
+	void flipNormals(){	flipNormalsValue *= -1;}
 	void setResolution( int _x=10, int _y=10, int _z=10 );
 	void polygonise( int i, int j, int k );
 	void computeNormal( int i, int j, int k );
 	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, ofPoint& v, ofPoint& n);
 	
 	void setIsoValue( int x, int y, int z, float value);
-	float getIsoValue(int x, int y, int z);
 	
-	
-	void flipNormals(){
-		flipNormalsValue *= -1;
-	}
 	bool getSmoothing(){	return bSmoothed;}
-	void setSmoothing( bool _bSmooth ){
-		bSmoothed = _bSmooth;
-	}
+	void setSmoothing( bool _bSmooth ){		bSmoothed = _bSmooth;}
+	
 	
 	void wipeIsoValues( float value=0.f);
 	
 	void clear();//deletes all the data. use whip
 	
-	void drawGrid( bool drawGridPoints=true);
 	
-	void setSize( float _x, float _y, float _z){
-		scale.set( _x, _y, _z );
-		ofVec3f halfSize = scale / 2;
-		ofVec3f cellDim = 1. / ofVec3f(resX-1, resY-1, resZ-1 );
-		
-		for(int i=0; i<gridPoints.size(); i++){
-			for(int j=0; j<gridPoints[i].size(); j++){
-				for(int k=0; k<gridPoints[i][j].size(); k++){
-					gridPoints[i][j][k].set(float(i)*cellDim.x, float(j)*cellDim.y, float(k)*cellDim.z);
-					gridPoints[i][j][k] -= .5;
-					normalVals[i][j][k].set( 0, 0, 0);
-				}
-			}
-		}
-	}
+	void setGridPoints( float _x, float _y, float _z);
 	
 	void updateTransformMatrix(){
 		transform.makeScaleMatrix( scale );
@@ -90,30 +66,41 @@ public:
 		transform.setTranslation( position );
 	}
 	
+	float& getIsoValue( int x, int y, int z){
+		return isoVals[ x*resY*resZ+ y*resZ + z ];
+	}
+	
+	ofVec3f& getGridPoint( int x, int y, int z){
+		return gridPoints[ x*resY*resZ+ y*resZ + z ];
+	}
+	ofVec3f& getNormalVal( int x, int y, int z){
+		return normalVals[ x*resY*resZ+ y*resZ + z ];
+	}
+	unsigned int& getGridPointComputed( int x, int y, int z){
+		return gridPointComputed[ x*resY*resZ+ y*resZ + z ];
+	}
+	
 	//private:
 	ofMatrix4x4 transform;
-	int	resX, resY, resZ, numTriangles;
+	int	resX, resY, resZ;
 	int resXm1, resYm1, resZm1;
 	float flipNormalsValue;
-	vector< vector< vector<float> > > isoVals;
-	vector< vector< vector<ofVec3f> > > gridPoints;
-	vector< vector< vector<ofVec3f> > > normalVals;
-	vector< vector< vector<bool> > > voxelComputed;
-	
-	float* iso;
-	ofVec3f* gp;
-	ofVec3f* norm;
+	ofVec3f cellDim;
+	vector<float> isoVals;
+	vector<ofVec3f> gridPoints;
+	vector<ofVec3f> normalVals;
+	vector<unsigned int> gridPointComputed;
+
 	
 	vector< ofVec3f > vertices;
 	vector< ofVec3f > normals;
-	vector< ofVec3f > gridVertices;
+	vector<float> boundryBox;
 	int vertexCount, maxVertexCount;
-	bool alreadyWarned;
 	
 	ofVec3f vertList[12], normList[12];
 	
 	float threshold;
-	bool bSmoothed;
+	bool bSmoothed, beenWarned;
 	
 	//transforms
 	ofVec3f position, scale, up;
@@ -121,4 +108,7 @@ public:
 	
 	ofMatrix3x3 normalMatrix;
 	ofMatrix4x4 modelMatrix, worldMatrix;
+	
+	ofVbo vbo;
+	bool bUseVbo;
 };

@@ -1,9 +1,10 @@
 #include "testApp.h"
 
 ofShader normalShader;
-bool wireframe;
+bool wireframe, drawGrid;
 
-int differentDemos;
+int differentSurfaces;
+string surfaceTypes[] = { "noise", "spheres", "sin"};
 
 //--------------------------------------------------------------
 void testApp::setup(){
@@ -11,10 +12,11 @@ void testApp::setup(){
 	ofBackground(30, 32, 35);
 	glEnable(GL_DEPTH_TEST);
 	
-	differentDemos = 0;
-	mc.setMaxVertexCount(100000);
-	mc.setResolution(20,20,20);
-	mc.setSize( 300, 300, 300 );
+	differentSurfaces = 0;
+	drawGrid = true;
+	mc.setResolution(30,15,30);
+	mc.scale.set( 300, 150, 300 );
+	mc.setSmoothing( false );
 		
 	normalShader.load("shaders/normalShader");
 }
@@ -23,52 +25,50 @@ void testApp::setup(){
 void testApp::update(){
 	float elapsedTime = ofGetElapsedTimef();
 	
-	
-	
-	if(differentDemos == 1){
+	if(differentSurfaces == 0){
 		//NOISE
-		float noiseStep = elapsedTime;// * .1;
-		float noiseScale = .1;
+		float noiseStep = elapsedTime * .5;
+		float noiseScale = .06;
+		float noiseScale2 = noiseScale * 2.;
 		for(int i=0; i<mc.resX; i++){
 			for(int j=0; j<mc.resY; j++){
 				for(int k=0; k<mc.resZ; k++){
 					//noise
 					float nVal = ofNoise(float(i)*noiseScale, float(j)*noiseScale, float(k)*noiseScale + noiseStep);
-					if(nVal > 0.)	nVal *= ofNoise(float(i)*noiseScale*2, float(j)*noiseScale*2, float(k)*noiseScale*2 + noiseStep);
+					if(nVal > 0.)	nVal *= ofNoise(float(i)*noiseScale2, float(j)*noiseScale2, float(k)*noiseScale2 + noiseStep);
 					mc.setIsoValue( i, j, k, nVal );
 				}
 			}
 		}
 	}
-	else if( differentDemos == 0){
-		//SPHERES. not technically spheres... but they're roundish
-		float stepI = PI * 6./mc.resX;
-		float stepJ = PI * 6./mc.resY;
-		float stepK = PI * 6./mc.resZ;
+	else if(differentSurfaces == 1){
+		//SPHERES
+		ofVec3f step = ofVec3f(3./mc.resX, 1.5/mc.resY, 3./mc.resZ) * PI;
 		for(int i=0; i<mc.resX; i++){
 			for(int j=0; j<mc.resY; j++){
 				for(int k=0; k<mc.resZ; k++){;
-					mc.setIsoValue( i, j, k, sin(float(i)*stepI) * sin(float(j+elapsedTime)*stepJ) * sin(float(k+elapsedTime)*stepK));
+					float val = sin(float(i)*step.x) * sin(float(j+elapsedTime)*step.y) * sin(float(k+elapsedTime)*step.z);
+					val *= val;
+					mc.setIsoValue( i, j, k, val );
 				}
 			}
 		}
 	}
-	else{
+	else if(differentSurfaces == 2){
 		//SIN
-		float sinScale = 1.;
+		float sinScale = .5;
 		for(int i=0; i<mc.resX; i++){
 			for(int j=0; j<mc.resY; j++){
 				for(int k=0; k<mc.resZ; k++){
-					mc.setIsoValue( i, j, k, sin(float(i)*sinScale) + cos(float(j)*sinScale) + sin(float(k)*sinScale + elapsedTime));
+					float val = sin(float(i)*sinScale) + cos(float(j)*sinScale) + sin(float(k)*sinScale + elapsedTime);
+					mc.setIsoValue( i, j, k, val * val );
 				}
 			}
 		}
 	}
 	
-	
 	//update the mesh
-	mc.update(.3);
-	
+	mc.update();
 }
 
 //--------------------------------------------------------------
@@ -88,13 +88,27 @@ void testApp::draw(){
 	normalShader.end();
 	
 	//draw the voxel grid
-	mc.drawGrid();
+	if(drawGrid)	mc.drawGrid();
 	
 	camera.end();
+	
+	string info = "fps:" + ofToString(ofGetFrameRate()) +
+	+ "\nnum vertices:" + ofToString(mc.vertexCount, 0)
+	+ "\nthreshold:" + ofToString(mc.threshold)
+    + "\n' ' changes surface type, currently " + surfaceTypes[differentSurfaces]
+	
+    + "\n's' toggles smoothing"
+    + "\n'w' toggles wireframe"
+    + "\n'f' flips normals"
+    + "\n'g' toggles draw grid"
+    + "\n'up/down' +- threshold";
+
+	ofDrawBitmapString(info, 20, 20);
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+	
 	switch (key) {
 		case 'w':
 			wireframe = !wireframe;
@@ -108,11 +122,30 @@ void testApp::keyPressed(int key){
 			mc.setSmoothing( !mc.getSmoothing() );
 			break;
 			
+		case 'g':
+			drawGrid = !drawGrid;
+			break;
+			
 		case ' ':
-			differentDemos++;
-			if(differentDemos>=3){
-				differentDemos = 0;
+			differentSurfaces++;
+			if(differentSurfaces>=3){
+				differentSurfaces = 0;
 			}
+			break;
+			
+		case 'v':
+			if(mc.getUsingVbo()){
+				mc.useVbo( false );
+			}else{
+				mc.useVbo( true );
+			}
+			break;
+			
+		case OF_KEY_UP:
+			mc.threshold += .03;
+			break;
+		case OF_KEY_DOWN:
+			mc.threshold -= .03;
 			break;
 			
 		default:

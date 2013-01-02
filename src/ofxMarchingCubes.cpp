@@ -1,9 +1,6 @@
-//
+ //
 //  ofxMarchingCubes.cpp
 //  ofxMarchingCubes
-//
-//  Created by lars berg on 12/28/12.
-//
 //
 
 #include "ofxMarchingCubes.h"
@@ -14,12 +11,22 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	flipNormalsValue = -1;
 	
 	setResolution( 10, 10, 10 );
+	maxVertexCount = 100000;
 	
-	maxVertexCount = 20000;
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
 	vertexCount = 0;
-	alreadyWarned = true;
+	beenWarned = false;
+
+	
+	up.set(0,1,0);
+	
+	float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
+	boundryBox.assign(boxVerts,boxVerts+72);
+	
+	
+	//vbo
+	useVbo( true );
 };
 ofxMarchingCubes::~ofxMarchingCubes(){};
 
@@ -27,48 +34,63 @@ void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 	maxVertexCount = _maxVertexCount;
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
+	
+	bool tempUseVbo = bUseVbo;
+	useVbo( true );
+	bUseVbo = tempUseVbo;
+	
+	beenWarned = false;
 }
 
-void ofxMarchingCubes::update(float _threshold ){
-	threshold = _threshold;
-	numTriangles = 0;
+bool ofxMarchingCubes::useVbo( bool _bUseVbo ){
+	bUseVbo = _bUseVbo;
 	
-	for(int i=0; i<normalVals.size(); i++){
-		for(int j=0; j<normalVals[i].size(); j++){
-			std::fill(normalVals[i][j].begin(), normalVals[i][j].end(), ofVec3f());
-			std::fill(voxelComputed[i][j].begin(), voxelComputed[i][j].end(), false );
-		}
+	if(bUseVbo){
+		vbo.setVertexData( &vertices[0], vertices.size(),GL_STATIC_READ );
+		vbo.setNormalData( &normals[0], normals.size(), GL_STATIC_READ );
 	}
+	return bUseVbo;
+}
+
+void ofxMarchingCubes::update(){
+	
+	std::fill( normalVals.begin(), normalVals.end(), ofVec3f());
+	std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
 	
 	vertexCount = 0;
-	for(int x=0; x<gridPoints.size(); x++){
-		for(int y=0; y<gridPoints[x].size(); y++){
-			for(int z=0; z<gridPoints[x][y].size(); z++){
+	for(int x=0; x<resX; x++){
+		for(int y=0; y<resY; y++){
+			for(int z=0; z<resZ; z++){
 				polygonise( x,y,z );
 			}
 		}
 	}
 	
 	updateTransformMatrix();
+	
+	if(bUseVbo){
+		vbo.updateVertexData(&vertices[0], min(maxVertexCount-1, vertexCount) );
+		vbo.updateNormalData(&normals[0], min(maxVertexCount-1, vertexCount) );
+	}
 }
 
 void ofxMarchingCubes::polygonise( int i, int j, int k ){
 	
-	if( vertexCount <= maxVertexCount-1){
+	if( vertexCount+3 < maxVertexCount ){
 		/*
 		 Determine the index into the edge table which
 		 tells us which vertices are inside of the surface
 		 */
 		int cubeindex = 0;
 		int i1 = min(i+1, resXm1), j1 = min(j+1, resYm1), k1 = min(k+1, resZm1);
-		cubeindex |= isoVals[i][j][k] > threshold ?   1 : 0;
-		cubeindex |= isoVals[i1][j][k] > threshold ?   2 : 0;
-		cubeindex |= isoVals[i1][j1][k] > threshold ?   4 : 0;
-		cubeindex |= isoVals[i][j1][k] > threshold ?   8 : 0;
-		cubeindex |= isoVals[i][j][k1] > threshold ?  16 : 0;
-		cubeindex |= isoVals[i1][j][k1] > threshold ?  32 : 0;
-		cubeindex |= isoVals[i1][j1][k1] > threshold ?  64 : 0;
-		cubeindex |= isoVals[i][j1][k1] > threshold ? 128 : 0;
+		cubeindex |= getIsoValue(i,j,k) > threshold ?   1 : 0;
+		cubeindex |= getIsoValue(i1,j,k) > threshold ?   2 : 0;
+		cubeindex |= getIsoValue(i1,j1,k) > threshold ?   4 : 0;
+		cubeindex |= getIsoValue(i,j1,k) > threshold ?   8 : 0;
+		cubeindex |= getIsoValue(i,j,k1) > threshold ?  16 : 0;
+		cubeindex |= getIsoValue(i1,j,k1) > threshold ?  32 : 0;
+		cubeindex |= getIsoValue(i1,j1,k1) > threshold ?  64 : 0;
+		cubeindex |= getIsoValue(i,j1,k1) > threshold ? 128 : 0;
 		
 		/* Cube is entirely in/out of the surface */
 		if (edgeTable[cubeindex] == 0)		return;
@@ -87,7 +109,6 @@ void ofxMarchingCubes::polygonise( int i, int j, int k ){
 		if (edgeTable[cubeindex] & 512)		vertexInterp(threshold, i1,j,k, i1,j,k1, vertList[9], normList[9]);
 		if (edgeTable[cubeindex] & 1024)	vertexInterp(threshold, i1,j1,k, i1,j1,k1, vertList[10], normList[10]);
 		if (edgeTable[cubeindex] & 2048)	vertexInterp(threshold, i,j1,k, i,j1,k1, vertList[11], normList[11]);
-		
 		
 		for (i=0;triTable[cubeindex][i]!=-1;i+=3) {
 			if(bSmoothed){
@@ -109,32 +130,29 @@ void ofxMarchingCubes::polygonise( int i, int j, int k ){
 			vertices[vertexCount+1] = vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount+2] = vertList[triTable[cubeindex][i+2]];
 			vertexCount += 3;
-			
-			numTriangles++;
 		}
 	}
-	else{
-		if(!alreadyWarned){
-			ofLogError( "ofxMarhingCubes: maximum vertex("+ofToString(maxVertexCount)+") count exceded. try increasinf the maxVertexCount with setMaxVertexCount()");
-			alreadyWarned = true;
-		}
+	else if(!beenWarned){
+		ofLogError( "ofxMarhingCubes: maximum vertex("+ofToString(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()");
+		beenWarned = true;
 	}
 }
 
 void ofxMarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, ofPoint& v, ofPoint& n){
 	
-	ofVec3f& p1 = gridPoints[i1][j1][k1];
-	ofVec3f& p2 = gridPoints[i2][j2][k2];
+	ofVec3f& p1 = getGridPoint(i1,j1,k1);
+	ofVec3f& p2 = getGridPoint(i2,j2,k2);
 	
-	float& iso1 = isoVals[i1][j1][k1];
-	float& iso2 = isoVals[i2][j2][k2];
+	float& iso1 = getIsoValue(i1,j1,k1);
+	float& iso2 = getIsoValue(i2,j2,k2);
 	
 	if(bSmoothed){
+		//we need to interpolate/calculate the normals
 		computeNormal( i1, j1, k1 );
 		computeNormal( i2, j2, k2 );
 		
-		ofVec3f& n1 = normalVals[i1][j1][k1];
-		ofVec3f& n2 = normalVals[i2][j2][k2];
+		ofVec3f& n1 = getNormalVal(i1,j1,k1);
+		ofVec3f& n2 = getNormalVal(i2,j2,k2);
 		
 		if (abs(threshold-iso1) < 0.00001){
 			v = p1;
@@ -147,7 +165,7 @@ void ofxMarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int
 			return;
 		}
 		if (abs(iso1-iso2) < 0.00001){
-			v.set(p1.x, p1.y, p1.z);
+			v = p1;
 			n = n1;
 			return;
 		}
@@ -159,6 +177,7 @@ void ofxMarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int
 	}
 	
 	else{
+		//we'll calc the normal later
 		if (abs(threshold-iso1) < 0.00001){
 			v = p1;
 			return;
@@ -168,7 +187,7 @@ void ofxMarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int
 			return;
 		}
 		if (abs(iso1-iso2) < 0.00001){
-			v.set(p1.x, p1.y, p1.z);
+			v = p1;
 			return;
 		}
 		
@@ -179,25 +198,20 @@ void ofxMarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int
 
 void ofxMarchingCubes::computeNormal( int i, int j, int k ) {
 	
-	
-	//TODO:: devise a better way to tell if a voxel has been computed.
-	if(!voxelComputed[i][j][k]){
-		ofVec3f& n = normalVals[i][j][k];
-		n.set(isoVals[min(resXm1, i+1)][j][k] - isoVals[max(0,i-1)][j][k],
-			  isoVals[i][min(resYm1, j+1)][k] - isoVals[i][max(0,j-1)][k],
-			  isoVals[i][j][min(resZm1, k+1)] - isoVals[i][j][max(0,k-1)]);
+
+	if(getGridPointComputed(i,j,k) == 0){
+		ofVec3f& n = getNormalVal(i, j, k);// normalVals[i][j][k];
+		n.set(getIsoValue(min(resXm1, i+1), j, k) - getIsoValue(max(0,i-1),j,k),
+			  getIsoValue(i,min(resYm1, j+1),k) - getIsoValue(i,max(0,j-1),k),
+			  getIsoValue(i,j,min(resZm1, k+1)) - getIsoValue(i,j,max(0,k-1)));
 		
 		n.normalize();
 		n *= flipNormalsValue;
-		voxelComputed[i][j][k] = true;
+		getGridPointComputed(i,j,k) = 1;
 	}
 };
 
-void ofxMarchingCubes::drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* _normals, bool wireframe){
-	if(wireframe)	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	
-	glPushMatrix();
-	glMultMatrixf( transform.getPtr() );
+void ofxMarchingCubes::drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* _normals){
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, sizeof((*_vertices)[0]), &(*_vertices)[0].x);
@@ -212,9 +226,39 @@ void ofxMarchingCubes::drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	if(_normals != NULL)	glDisableClientState(GL_NORMAL_ARRAY);
 	
-	glPopMatrix();
+}
+
+void ofxMarchingCubes::setGridPoints( float _x, float _y, float _z){
+	cellDim = 1. / ofVec3f(resXm1, resYm1, resZm1 );
 	
-	if(wireframe)	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	for(int i=0; i<resX; i++){
+		for(int j=0; j<resY; j++){
+			for(int k=0; k<resZ; k++){
+				getGridPoint( i, j, k ).set(float(i)*cellDim.x-.5,
+											float(j)*cellDim.y-.5,
+											float(k)*cellDim.z-.5);
+			}
+		}
+	}
+}
+
+void ofxMarchingCubes::draw( GLenum renderType ){
+	glPushMatrix();
+	glMultMatrixf( transform.getPtr() );
+	
+	if(bUseVbo){
+		vbo.draw( renderType, 0, min(maxVertexCount, vertexCount) );
+	}
+	else{
+		drawArrays( &vertices, &normals );
+	}
+	glPopMatrix();
+}
+
+void ofxMarchingCubes::drawWireframe(){
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	draw();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void ofxMarchingCubes::drawGrid( bool drawGridPoints){
@@ -223,82 +267,30 @@ void ofxMarchingCubes::drawGrid( bool drawGridPoints){
 	glMultMatrixf( transform.getPtr() );
 	
 	if(drawGridPoints){
-		if(gridVertices.size() == 0){
-			float xStep = 1./float(resX);
-			float yStep = 1./float(resY);
-			float zStep = 1./float(resZ);
-			ofVec3f halfSize = scale/2.;
-			for(int x=0; x<=resX; x++){
-				for(int y=0; y<=resY; y++){
-					for(int z=0; z<=resZ; z++){
-						gridVertices.push_back( ofVec3f(xStep * float(x), yStep * float(y), zStep * float(z)) - .5);
-
-					}
-				}
-			}
-		}
-		
 		glColor3f(.5,.5,.5);
 		glPointSize(.5);
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_FLOAT, sizeof(gridVertices[0]), &gridVertices[0].x);
-		glDrawArrays(GL_POINTS, 0, (int)gridVertices.size());
+		glVertexPointer(3, GL_FLOAT, sizeof(gridPoints[0]), &gridPoints[0].x);
+		glDrawArrays(GL_POINTS, 0, (int)gridPoints.size());
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	
 	glColor3f(1,1,1);
-	glBegin(GL_LINES);
-	glVertex3f(-.5, -.5, -.5);
-	glVertex3f(.5, -.5, -.5);
-	glVertex3f(-.5, .5, -.5);
-	glVertex3f(.5, .5, -.5);
-	
-	glVertex3f(-.5, -.5, .5);
-	glVertex3f(.5, -.5, .5);
-	glVertex3f(-.5, .5, .5);
-	glVertex3f(.5, .5, .5);
-	
-	glVertex3f(-.5, -.5, .5);
-	glVertex3f(-.5, -.5, -.5);
-	glVertex3f(-.5, .5, .5);
-	glVertex3f(-.5, .5, -.5);
-	
-	glVertex3f(.5, -.5, .5);
-	glVertex3f(.5, -.5, -.5);
-	glVertex3f(.5, .5, .5);
-	glVertex3f(.5, .5, -.5);
-	
-	glVertex3f(-.5, .5, -.5);
-	glVertex3f(-.5, -.5, -.5);
-	glVertex3f(-.5, .5, .5);
-	glVertex3f(-.5, -.5, .5);
-	
-	glVertex3f(.5, .5, -.5);
-	glVertex3f(.5, -.5, -.5);
-	glVertex3f(.5, .5, .5);
-	glVertex3f(.5, -.5, .5);
-	
-	glEnd();
+	glLineWidth(1.);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, &boundryBox[0]);
+	glDrawArrays(GL_LINES, 0, (int)boundryBox.size()/3 );
+	glDisableClientState(GL_VERTEX_ARRAY);
 	
 	glPopMatrix();
 }
 
 void ofxMarchingCubes::setIsoValue( int x, int y, int z, float value){
-	if(x<resX && y<resY && z<resZ){
-		isoVals[x][y][z] = value;
-	}
-}
-float ofxMarchingCubes::getIsoValue(int x, int y, int z){
-	if(x<resX && y<resY && z<resZ){
-		return isoVals[x][y][z];
-	}
-	
-	return 0;
+	getIsoValue(min(resXm1,x), min(resYm1,y), min(resZm1,z)) = value;
+	getGridPointComputed(x,y,z) = 0;
 }
 
 void ofxMarchingCubes::setResolution( int _x, int _y, int _z ){
-	
-	gridVertices.clear();
 	
 	resX = _x;
 	resY = _y;
@@ -307,52 +299,23 @@ void ofxMarchingCubes::setResolution( int _x, int _y, int _z ){
 	resYm1 = resY-1;
 	resZm1 = resZ-1;
 	
-	isoVals.resize( resX );
-	gridPoints.resize( resX );
-	normalVals.resize( resX );
-	voxelComputed.resize( resX );
+	isoVals.resize( resX*resY*resZ );
+	gridPoints.resize( resX*resY*resZ );
+	normalVals.resize( resX*resY*resZ );
+	gridPointComputed.resize( resX*resY*resZ );
 	
-	for(int x=0; x<isoVals.size(); x++){
-		isoVals[x].resize( resY );
-		gridPoints[x].resize( resY );
-		normalVals[x].resize( resY );
-		voxelComputed[x].resize( resY );
-		
-		for(int y=0; y<isoVals[x].size(); y++){
-			isoVals[x][y].resize( resZ );
-			gridPoints[x][y].resize( resZ );
-			normalVals[x][y].resize( resZ );
-			voxelComputed[x][y].resize( resZ );
-		}
-	}
-	
-	setSize( resX*10, resY*10, resZ*10 );
+	setGridPoints( resX*10, resY*10, resZ*10 );
 }
 
 void ofxMarchingCubes::wipeIsoValues( float value){
-	for(int x=0; x<isoVals.size(); x++){
-		for(int y=0; y<isoVals[x].size(); y++){
-			std::fill(isoVals[x][y].begin(), isoVals[x][y].end(), value);
-			std::fill(voxelComputed[x][y].begin(), voxelComputed[x][y].end(), false);
+	
+	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
+	std::fill(isoVals.begin(), isoVals.end(), value);
 
-//			std::fill(gridPoints[x][y].begin(), gridPoints[x][y].end(), ofVec3f());
-//			std::fill(normalVals[x][y].begin(), normalVals[x][y].end(), ofVec3f());
-		}
-	}
 }
 
 
 void ofxMarchingCubes::clear(){
-	for(int x=isoVals.size()-1; x>=0; x--){
-		for(int y=isoVals[x].size()-1; y>=0; y--){
-			isoVals[x][y].clear();
-			gridPoints[x][y].clear();
-			normalVals[x][y].clear();
-		}
-		isoVals[x].clear();
-		gridPoints[x].clear();
-		normalVals[x].clear();
-	}
 	isoVals.clear();
 	gridPoints.clear();
 	normalVals.clear();
