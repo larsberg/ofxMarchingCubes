@@ -2,3 +2,17 @@
 *.xcuserstate
 
 bin/ofxMarchingCubesDebug.app/Contents/MacOS/ofxMarchingCubesDebug
+
+*.depend
+*.layout
+*.mode*v3
+*.pbxuser
+*.app*
+*.DS_*
+*.xcworkspacedata
+
+.svn/
+obj/
+bin/
+build/
+!data/
