@@ -1,7 +1,7 @@
 
 *.xcuserstate
 
-bin/ofxMarchingCubesDebug.app/Contents/MacOS/ofxMarchingCubesDebug
+bin/ofxMarchingCubesDebug.app/Contents/MacOS/example_ofxMarchingCubesDebug
 
 *.depend
 *.layout
