@@ -1,10 +1,10 @@
 #include "testApp.h"
 
+string surfaceTypes[] = { "noise", "spheres", "sine^2"};
 
 //--------------------------------------------------------------
 void testApp::setup(){
 	
-	ofBackground(30, 32, 35);
 	glEnable(GL_DEPTH_TEST);
 	
 	differentSurfaces = 0;

@@ -1,18 +1,37 @@
+# project specific
+parisWSocketServer/bin/*
+!parisWSocketServer/bin/data
 
-*.xcuserstate
+# XCode build stuff
+*.build
+DerivedData
 
-bin/ofxMarchingCubesDebug.app/Contents/MacOS/example_ofxMarchingCubesDebug
+# apps
+*.app
 
-*.depend
-*.layout
-*.mode*v3
-*.pbxuser
-*.app*
-*.DS_*
-*.xcworkspacedata
+# osx noise
+.DS_Store
+profile
 
-.svn/
-obj/
-bin/
+# sublime stuff
+*.sublime-project
+*.sublime-workspace
+
+# IS stuff
+*.zip
 build/
-!data/
+
+# xcode noise
+build/*
+*.mode1
+*.mode1v3
+*.mode2v3
+*.perspective
+*.perspectivev3
+*.pbxuser
+*.xcworkspace
+xcuserdata
+
+# svn & cvs
+.svn
+CVS

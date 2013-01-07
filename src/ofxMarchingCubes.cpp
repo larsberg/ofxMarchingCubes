@@ -268,7 +268,7 @@ void ofxMarchingCubes::drawGrid( bool drawGridPoints){
 	
 	if(drawGridPoints){
 		glColor3f(.5,.5,.5);
-		glPointSize(.5);
+		glPointSize(1);
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, sizeof(gridPoints[0]), &gridPoints[0].x);
 		glDrawArrays(GL_POINTS, 0, (int)gridPoints.size());
@@ -276,7 +276,7 @@ void ofxMarchingCubes::drawGrid( bool drawGridPoints){
 	}
 	
 	glColor3f(1,1,1);
-	glLineWidth(1.);
+	glLineWidth(1.5);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, &boundryBox[0]);
 	glDrawArrays(GL_LINES, 0, (int)boundryBox.size()/3 );

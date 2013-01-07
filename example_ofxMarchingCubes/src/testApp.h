@@ -29,5 +29,4 @@ class testApp : public ofBaseApp{
 	bool wireframe, drawGrid;
 	
 	int differentSurfaces;
-	string surfaceTypes[] = { "noise", "spheres", "sine^2"};
 };
