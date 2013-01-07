@@ -7,10 +7,6 @@
 TODO::
  -get worldposition in grid
  -add iso value at world position
-
- 
-ISSUES:
- -seems like we should use openCL for this...
  */
 
 
@@ -66,17 +62,16 @@ public:
 		transform.setTranslation( position );
 	}
 	
-	float& getIsoValue( int x, int y, int z){
+	inline float& getIsoValue( int x, int y, int z){
 		return isoVals[ x*resY*resZ+ y*resZ + z ];
 	}
-	
-	ofVec3f& getGridPoint( int x, int y, int z){
+	inline ofVec3f& getGridPoint( int x, int y, int z){
 		return gridPoints[ x*resY*resZ+ y*resZ + z ];
 	}
-	ofVec3f& getNormalVal( int x, int y, int z){
+	inline ofVec3f& getNormalVal( int x, int y, int z){
 		return normalVals[ x*resY*resZ+ y*resZ + z ];
 	}
-	unsigned int& getGridPointComputed( int x, int y, int z){
+	inline unsigned int& getGridPointComputed( int x, int y, int z){
 		return gridPointComputed[ x*resY*resZ+ y*resZ + z ];
 	}
 	

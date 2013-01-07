@@ -1,10 +1,5 @@
 #include "testApp.h"
 
-ofShader normalShader;
-bool wireframe, drawGrid;
-
-int differentSurfaces;
-string surfaceTypes[] = { "noise", "spheres", "sin"};
 
 //--------------------------------------------------------------
 void testApp::setup(){
@@ -14,7 +9,7 @@ void testApp::setup(){
 	
 	differentSurfaces = 0;
 	drawGrid = true;
-	mc.setResolution(30,15,30);
+	mc.setResolution(32,16,32);
 	mc.scale.set( 300, 150, 300 );
 		
 	normalShader.load("shaders/normalShader");

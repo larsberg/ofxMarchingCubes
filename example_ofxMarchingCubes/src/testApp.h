@@ -20,8 +20,14 @@ class testApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		
-	ofxMarchingCubes mc;
 	
 	ofEasyCam camera;
+	
+	ofxMarchingCubes mc;
+	
+	ofShader normalShader;
+	bool wireframe, drawGrid;
+	
+	int differentSurfaces;
+	string surfaceTypes[] = { "noise", "spheres", "sine^2"};
 };
