@@ -1,4 +1,4 @@
-# ofxMarchingCubes -- an implamentation of //http://paulbourke.net/geometry/polygonise/
+# ofxMarchingCubes -- an implementation of //http://paulbourke.net/geometry/polygonise/
 
 By Lars Berg
 
