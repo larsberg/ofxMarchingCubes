@@ -1,6 +1,8 @@
 #include "testApp.h"
 
 string surfaceTypes[] = { "noise", "spheres", "sine^2"};
+float elapsedTime;
+bool bPause = false;
 
 //--------------------------------------------------------------
 void testApp::setup(){
@@ -10,14 +12,14 @@ void testApp::setup(){
 	differentSurfaces = 0;
 	drawGrid = true;
 	mc.setResolution(32,16,32);
-	mc.scale.set( 300, 150, 300 );
+	mc.scale.set( 500, 250, 500 );
 		
 	normalShader.load("shaders/normalShader");
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
-	float elapsedTime = ofGetElapsedTimef();
+	if(!bPause) elapsedTime = ofGetElapsedTimef();
 	
 	if(differentSurfaces == 0){
 		//NOISE
@@ -95,6 +97,7 @@ void testApp::draw(){
     + "\n'w' toggles wireframe"
     + "\n'f' flips normals"
     + "\n'g' toggles draw grid"
+    + "\n'p' toggles pause"
     + "\n'up/down' +- threshold";
 
 	ofDrawBitmapString(info, 20, 20);
@@ -125,6 +128,10 @@ void testApp::keyPressed(int key){
 			if(differentSurfaces>=3){
 				differentSurfaces = 0;
 			}
+			break;
+			
+		case 'p':
+			bPause = !bPause;
 			break;
 			
 		case 'v':

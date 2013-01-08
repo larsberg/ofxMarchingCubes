@@ -1,6 +1,8 @@
 //
 //  ofxMarchingCubes.h
 //  ofxMarchingCubes
+
+//http://paulbourke.net/geometry/polygonise/
 //
 
 /*
