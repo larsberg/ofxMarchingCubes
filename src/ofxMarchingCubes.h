@@ -77,6 +77,8 @@ public:
 		return gridPointComputed[ x*resY*resZ+ y*resZ + z ];
 	}
 	
+	void exportObj( string fileName );
+	
 	//private:
 	ofMatrix4x4 transform;
 	int	resX, resY, resZ;
@@ -104,7 +106,6 @@ public:
 	ofQuaternion orientation;
 	
 	ofMatrix3x3 normalMatrix;
-	ofMatrix4x4 modelMatrix, worldMatrix;
 	
 	ofVbo vbo;
 	bool bUseVbo;

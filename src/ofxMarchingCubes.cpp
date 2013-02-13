@@ -11,7 +11,7 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	flipNormalsValue = -1;
 	
 	setResolution( 10, 10, 10 );
-	maxVertexCount = 100000;
+	maxVertexCount = 150000;
 	
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
@@ -46,8 +46,8 @@ bool ofxMarchingCubes::useVbo( bool _bUseVbo ){
 	bUseVbo = _bUseVbo;
 	
 	if(bUseVbo){
-		vbo.setVertexData( &vertices[0], vertices.size(),GL_STATIC_READ );
-		vbo.setNormalData( &normals[0], normals.size(), GL_STATIC_READ );
+		vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
+		vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
 	}
 	return bUseVbo;
 }
@@ -229,7 +229,7 @@ void ofxMarchingCubes::drawArrays( vector<ofVec3f>* _vertices, vector<ofVec3f>* 
 }
 
 void ofxMarchingCubes::setGridPoints( float _x, float _y, float _z){
-	cellDim = 1. / ofVec3f(resXm1, resYm1, resZm1 );
+	cellDim = ofVec3f( 1./resXm1, 1./resYm1, 1./resZm1 );
 	
 	for(int i=0; i<resX; i++){
 		for(int j=0; j<resY; j++){
@@ -319,4 +319,58 @@ void ofxMarchingCubes::clear(){
 	isoVals.clear();
 	gridPoints.clear();
 	normalVals.clear();
+}
+
+void ofxMarchingCubes::exportObj( string fileName ){
+	//super simple obj export. doesn;t have any texture coords, materials, or anything super special.
+	//just vertices and normals and not optimized either...
+	
+	//write file
+	string title = fileName;
+	fileName = ofToDataPath(fileName + ".obj", true);
+	char *fn = (char*)fileName.c_str();
+	
+	ofstream outfile (fn);
+	
+	outfile << "# This file uses centimeters as units for non-parametric coordinates."<< endl;
+	
+	
+	updateTransformMatrix();
+	ofMatrix4x4 normMat;
+	normMat.makeOrthoNormalOf( transform );
+	ofVec3f v, n;
+	
+	for( int i=0; i<vertexCount; i++){
+		v = transform * vertices[i];
+		outfile<< "v ";
+		outfile<< v.x << " ";
+		outfile<< v.y << " ";
+		outfile<< v.z << endl;
+	}
+	outfile << endl;
+	
+	for( int i=0; i<vertexCount; i++){
+		n = normMat * normals[i];
+		outfile<< "vn ";
+		outfile<< n.x << " ";
+		outfile<< n.y << " ";
+		outfile<< n.z << endl;
+	}
+	outfile << endl;
+	
+	//this only works for triangulated meshes
+	for( int i=0; i<vertexCount; i+=3){
+		outfile<< "f ";
+		for(int j=0; j<3; j++){
+			outfile<< i+j+1 ;
+			outfile<<"/"<<i+j+1 ;
+			outfile<< " ";
+		}
+		outfile<< endl;
+	}
+	outfile << endl;
+	
+	outfile.close();
+	
+	cout <<"model exported as: "<< title <<".obj"<< endl;
 }
