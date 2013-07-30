@@ -25,14 +25,8 @@ public:
 	
 	void setMaxVertexCount( int _maxVertexCount );
 	
-	void update();
-	void update(float _threshold){
-		threshold = _threshold;
-		update();
-	}
-	
-	bool useVbo( bool _bUseVbo );
-	bool getUsingVbo(){		return bUseVbo;}
+	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=100000);
+	void update(float _threshold);
 	
 	void draw( GLenum renderType = GL_TRIANGLES );
 	void drawWireframe();
@@ -108,5 +102,5 @@ public:
 	ofMatrix3x3 normalMatrix;
 	
 	ofVbo vbo;
-	bool bUseVbo;
+	bool bUpdateMesh;
 };

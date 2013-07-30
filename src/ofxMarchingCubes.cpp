@@ -10,14 +10,18 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	bSmoothed = true;
 	flipNormalsValue = -1;
 	
-	setResolution( 10, 10, 10 );
-	maxVertexCount = 150000;
 	
-	vertices.resize( maxVertexCount );
-	normals.resize( maxVertexCount );
-	vertexCount = 0;
-	beenWarned = false;
+};
+ofxMarchingCubes::~ofxMarchingCubes(){};
 
+void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
+
+	
+	beenWarned = false;
+}
+
+
+void ofxMarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	
 	up.set(0,1,0);
 	
@@ -25,58 +29,68 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	boundryBox.assign(boxVerts,boxVerts+72);
 	
 	
-	//vbo
-	useVbo( true );
-};
-ofxMarchingCubes::~ofxMarchingCubes(){};
-
-void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
+	setResolution( 10, 10, 10 );
+	maxVertexCount = 150000;
+	
+	vertexCount = 0;
+	beenWarned = false;
+	
 	maxVertexCount = _maxVertexCount;
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
 	
-	bool tempUseVbo = bUseVbo;
-	useVbo( true );
-	bUseVbo = tempUseVbo;
-	
-	beenWarned = false;
+	vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
+	vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
 }
 
-bool ofxMarchingCubes::useVbo( bool _bUseVbo ){
-	bUseVbo = _bUseVbo;
+void ofxMarchingCubes::update(float _threshold){
 	
-	if(bUseVbo){
-		vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
-		vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
-	}
-	return bUseVbo;
-}
-
-void ofxMarchingCubes::update(){
-	
-	std::fill( normalVals.begin(), normalVals.end(), ofVec3f());
-	std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
-	
-	vertexCount = 0;
-	for(int x=0; x<resX; x++){
-		for(int y=0; y<resY; y++){
-			for(int z=0; z<resZ; z++){
-				polygonise( x,y,z );
+	if( bUpdateMesh || threshold != _threshold ){
+			
+		threshold = _threshold;
+		
+		std::fill( normalVals.begin(), normalVals.end(), ofVec3f());
+		std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
+		
+		vertexCount = 0;
+		for(int x=0; x<resX; x++){
+			for(int y=0; y<resY; y++){
+				for(int z=0; z<resZ; z++){
+					polygonise( x,y,z );
+				}
 			}
 		}
+		
+		updateTransformMatrix();
+		
+//		if(bUseVbo){
+//			vbo.updateVertexData(&vertices[0], min(maxVertexCount-1, vertexCount) );
+//			vbo.updateNormalData(&normals[0], min(maxVertexCount-1, vertexCount) );
+//		}
+		
+		vbo.updateVertexData( &vertices[0], vertexCount );
+		vbo.updateNormalData( &normals[0], vertexCount );
+		
+		bUpdateMesh = false;
 	}
+}
+
+void ofxMarchingCubes::draw( GLenum renderType )
+{
+	glPushMatrix();
+	glMultMatrixf( transform.getPtr() );
 	
-	updateTransformMatrix();
-	
-	if(bUseVbo){
-		vbo.updateVertexData(&vertices[0], min(maxVertexCount-1, vertexCount) );
-		vbo.updateNormalData(&normals[0], min(maxVertexCount-1, vertexCount) );
-	}
+	vbo.draw( renderType, 0, vertexCount );
+
+//	drawArrays( &vertices, &normals );
+
+	glPopMatrix();
 }
 
 void ofxMarchingCubes::polygonise( int i, int j, int k ){
 	
 	if( vertexCount+3 < maxVertexCount ){
+		bUpdateMesh = true;
 		/*
 		 Determine the index into the edge table which
 		 tells us which vertices are inside of the surface
@@ -242,18 +256,7 @@ void ofxMarchingCubes::setGridPoints( float _x, float _y, float _z){
 	}
 }
 
-void ofxMarchingCubes::draw( GLenum renderType ){
-	glPushMatrix();
-	glMultMatrixf( transform.getPtr() );
-	
-	if(bUseVbo){
-		vbo.draw( renderType, 0, min(maxVertexCount, vertexCount) );
-	}
-	else{
-		drawArrays( &vertices, &normals );
-	}
-	glPopMatrix();
-}
+
 
 void ofxMarchingCubes::drawWireframe(){
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -288,6 +291,7 @@ void ofxMarchingCubes::drawGrid( bool drawGridPoints){
 void ofxMarchingCubes::setIsoValue( int x, int y, int z, float value){
 	getIsoValue(min(resXm1,x), min(resYm1,y), min(resZm1,z)) = value;
 	getGridPointComputed(x,y,z) = 0;
+	bUpdateMesh = true;
 }
 
 void ofxMarchingCubes::setResolution( int _x, int _y, int _z ){
