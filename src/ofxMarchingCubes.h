@@ -24,12 +24,9 @@ public:
 	~ofxMarchingCubes();
 	
 	void setMaxVertexCount( int _maxVertexCount );
-	void setup( int dimX=30, int dimY=20, int dimZ=30, int max_particle_count=100000);
-	void update();
-	void update(float _threshold){
-		threshold = _threshold;
-		update();
-	}
+	
+	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=100000);
+	void update(float _threshold);
 	
 	void draw( GLenum renderType = GL_TRIANGLES );
 	void drawWireframe();
