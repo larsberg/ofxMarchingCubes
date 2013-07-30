@@ -24,15 +24,12 @@ public:
 	~ofxMarchingCubes();
 	
 	void setMaxVertexCount( int _maxVertexCount );
-	
+	void setup( int dimX=30, int dimY=20, int dimZ=30, int max_particle_count=100000);
 	void update();
 	void update(float _threshold){
 		threshold = _threshold;
 		update();
 	}
-	
-	bool useVbo( bool _bUseVbo );
-	bool getUsingVbo(){		return bUseVbo;}
 	
 	void draw( GLenum renderType = GL_TRIANGLES );
 	void drawWireframe();
@@ -108,5 +105,5 @@ public:
 	ofMatrix3x3 normalMatrix;
 	
 	ofVbo vbo;
-	bool bUseVbo;
+	bool bUpdateMesh;
 };
