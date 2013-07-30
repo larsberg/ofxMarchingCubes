@@ -10,6 +10,23 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	bSmoothed = true;
 	flipNormalsValue = -1;
 	
+	setResolution( 10, 10, 10 );
+	maxVertexCount = 150000;
+	
+	vertices.resize( maxVertexCount );
+	normals.resize( maxVertexCount );
+	vertexCount = 0;
+	beenWarned = false;
+
+	
+	up.set(0,1,0);
+	
+	float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
+	boundryBox.assign(boxVerts,boxVerts+72);
+	
+	
+	//vbo
+	useVbo( true );
 };
 ofxMarchingCubes::~ofxMarchingCubes(){};
 
@@ -18,59 +35,48 @@ void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
 	
-	
-	vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_DRAW );
-	vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_DRAW );
+	bool tempUseVbo = bUseVbo;
+	useVbo( true );
+	bUseVbo = tempUseVbo;
 	
 	beenWarned = false;
 }
 
-void ofxMarchingCubes::setup( int dimX, int dimY, int dimZ, int max_particle_count ){
-	setResolution( 10, 10, 10 );
-	maxVertexCount = 150000;
+bool ofxMarchingCubes::useVbo( bool _bUseVbo ){
+	bUseVbo = _bUseVbo;
 	
-	vertices.resize( maxVertexCount );
-	normals.resize( maxVertexCount );
-	vertexCount = 0;
-	beenWarned = false;
-	
-	
-	up.set(0,1,0);
-	
-	float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
-	boundryBox.assign(boxVerts,boxVerts+72);
-	
-	bUpdateMesh = false;;
+	if(bUseVbo){
+		vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
+		vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
+	}
+	return bUseVbo;
 }
+
 void ofxMarchingCubes::update(){
 	
-//	if (bUpdateMesh) {
-		
-		std::fill( normalVals.begin(), normalVals.end(), ofVec3f());
-		std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
-		
-		vertexCount = 0;
-		for(int x=0; x<resX; x++){
-			for(int y=0; y<resY; y++){
-				for(int z=0; z<resZ; z++){
-					polygonise( x,y,z );
-				}
+	std::fill( normalVals.begin(), normalVals.end(), ofVec3f());
+	std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
+	
+	vertexCount = 0;
+	for(int x=0; x<resX; x++){
+		for(int y=0; y<resY; y++){
+			for(int z=0; z<resZ; z++){
+				polygonise( x,y,z );
 			}
 		}
-		
-		updateTransformMatrix();
-		
+	}
+	
+	updateTransformMatrix();
+	
+	if(bUseVbo){
 		vbo.updateVertexData(&vertices[0], min(maxVertexCount-1, vertexCount) );
 		vbo.updateNormalData(&normals[0], min(maxVertexCount-1, vertexCount) );
-
-		bUpdateMesh = false;
-//	}
+	}
 }
 
 void ofxMarchingCubes::polygonise( int i, int j, int k ){
 	
 	if( vertexCount+3 < maxVertexCount ){
-		bUpdateMesh = true;
 		/*
 		 Determine the index into the edge table which
 		 tells us which vertices are inside of the surface
@@ -121,11 +127,9 @@ void ofxMarchingCubes::polygonise( int i, int j, int k ){
 			}
 			
 			vertices[vertexCount] = vertList[triTable[cubeindex][i]];
-			vertexCount++;
-			vertices[vertexCount] = vertList[triTable[cubeindex][i+1]];
-			vertexCount++;
+			vertices[vertexCount+1] = vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount+2] = vertList[triTable[cubeindex][i+2]];
-			vertexCount++;
+			vertexCount += 3;
 		}
 	}
 	else if(!beenWarned){
@@ -242,10 +246,12 @@ void ofxMarchingCubes::draw( GLenum renderType ){
 	glPushMatrix();
 	glMultMatrixf( transform.getPtr() );
 	
-	vbo.draw( renderType, 0, vertexCount );
-	
-//	bUseVbo ?	vbo.draw( renderType, 0, min(maxVertexCount, vertexCount) ) : drawArrays( &vertices, &normals );
-	
+	if(bUseVbo){
+		vbo.draw( renderType, 0, min(maxVertexCount, vertexCount) );
+	}
+	else{
+		drawArrays( &vertices, &normals );
+	}
 	glPopMatrix();
 }
 
