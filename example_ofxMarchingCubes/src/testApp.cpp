@@ -11,8 +11,11 @@ void testApp::setup(){
 	
 	differentSurfaces = 0;
 	drawGrid = true;
+	mc.setup();
 	mc.setResolution(32,16,32);
 	mc.scale.set( 500, 250, 500 );
+
+	mc.setSmoothing( false );
 		
 	normalShader.load("shaders/normalShader");
 }
@@ -65,6 +68,7 @@ void testApp::update(){
 	
 	//update the mesh
 	mc.update();
+//	mc.update(threshold);
 }
 
 //--------------------------------------------------------------
@@ -76,11 +80,9 @@ void testApp::draw(){
 	
 	//draw the mesh
 	normalShader.begin();
-	if(wireframe){
-		mc.drawWireframe();
-	}else{
-		mc.draw();
-	}
+
+	wireframe?	mc.drawWireframe() : mc.draw();
+	
 	normalShader.end();
 	
 	//draw the voxel grid
@@ -132,14 +134,6 @@ void testApp::keyPressed(int key){
 			
 		case 'p':
 			bPause = !bPause;
-			break;
-			
-		case 'v':
-			if(mc.getUsingVbo()){
-				mc.useVbo( false );
-			}else{
-				mc.useVbo( true );
-			}
 			break;
 			
 		case OF_KEY_UP:

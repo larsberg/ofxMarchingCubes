@@ -23,9 +23,10 @@ public:
 	ofxMarchingCubes();
 	~ofxMarchingCubes();
 	
-	void setMaxVertexCount( int _maxVertexCount );
+	void setMaxVertexCount( int _maxVertexCount = 100000 );
 	
 	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=100000);
+	void update(){		update( threshold );}
 	void update(float _threshold);
 	
 	void draw( GLenum renderType = GL_TRIANGLES );
@@ -40,6 +41,9 @@ public:
 	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, ofPoint& v, ofPoint& n);
 	
 	void setIsoValue( int x, int y, int z, float value);
+	void addToIsoValue( int x, int y, int z, float value){
+		getIsoValue(x,y,z) += value;
+	}
 	
 	bool getSmoothing(){	return bSmoothed;}
 	void setSmoothing( bool _bSmooth ){		bSmoothed = _bSmooth;}

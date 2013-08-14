@@ -10,13 +10,11 @@ ofxMarchingCubes::ofxMarchingCubes(){
 	bSmoothed = true;
 	flipNormalsValue = -1;
 	
-	
 };
 ofxMarchingCubes::~ofxMarchingCubes(){};
 
 void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
-
-	
+	maxVertexCount = _maxVertexCount;
 	beenWarned = false;
 }
 
@@ -35,7 +33,6 @@ void ofxMarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount)
 	vertexCount = 0;
 	beenWarned = false;
 	
-	maxVertexCount = _maxVertexCount;
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
 	
@@ -63,11 +60,6 @@ void ofxMarchingCubes::update(float _threshold){
 		
 		updateTransformMatrix();
 		
-//		if(bUseVbo){
-//			vbo.updateVertexData(&vertices[0], min(maxVertexCount-1, vertexCount) );
-//			vbo.updateNormalData(&normals[0], min(maxVertexCount-1, vertexCount) );
-//		}
-		
 		vbo.updateVertexData( &vertices[0], vertexCount );
 		vbo.updateNormalData( &normals[0], vertexCount );
 		
@@ -81,8 +73,6 @@ void ofxMarchingCubes::draw( GLenum renderType )
 	glMultMatrixf( transform.getPtr() );
 	
 	vbo.draw( renderType, 0, vertexCount );
-
-//	drawArrays( &vertices, &normals );
 
 	glPopMatrix();
 }
