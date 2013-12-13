@@ -43,6 +43,7 @@ public:
 	void setIsoValue( int x, int y, int z, float value);
 	void addToIsoValue( int x, int y, int z, float value){
 		getIsoValue(x,y,z) += value;
+        bUpdateMesh = true;
 	}
 	
 	bool getSmoothing(){	return bSmoothed;}
