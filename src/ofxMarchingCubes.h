@@ -92,7 +92,8 @@ public:
 	
 	vector< ofVec3f > vertices;
 	vector< ofVec3f > normals;
-	vector<float> boundryBox;
+	ofVbo boundaryVbo;
+	ofVbo gridPointsVbo;
 	int vertexCount, maxVertexCount;
 	
 	ofVec3f vertList[12], normList[12];
