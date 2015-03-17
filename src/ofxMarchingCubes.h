@@ -25,7 +25,7 @@ public:
 	
 	void setMaxVertexCount( int _maxVertexCount = 100000 );
 	
-	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=100000);
+	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=150000);
 	void update(){		update( threshold );}
 	void update(float _threshold);
 	

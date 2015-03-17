@@ -21,16 +21,17 @@ void ofxMarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 
 void ofxMarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	
+	clear();
+
 	up.set(0,1,0);
 	
 	float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
 	boundaryVbo.setVertexData( boxVerts, 3, 24, GL_STATIC_DRAW );
 	
-	setResolution( 10, 10, 10 );
-	maxVertexCount = 150000;
-	
+	setResolution( resX, resY, resZ );
+	setMaxVertexCount( _maxVertexCount );
+
 	vertexCount = 0;
-	beenWarned = false;
 	
 	vertices.resize( maxVertexCount );
 	normals.resize( maxVertexCount );
