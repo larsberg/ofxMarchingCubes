@@ -1,37 +1,34 @@
-# project specific
-parisWSocketServer/bin/*
-!parisWSocketServer/bin/data
+libs/
+docs/
 
-# XCode build stuff
-*.build
-DerivedData
-
-# apps
-*.app
-
-# osx noise
-.DS_Store
-profile
-
-# sublime stuff
-*.sublime-project
-*.sublime-workspace
-
-# IS stuff
-*.zip
-build/
-
-# xcode noise
-build/*
-*.mode1
-*.mode1v3
-*.mode2v3
-*.perspective
-*.perspectivev3
+*.depend
+*.layout
+*.mode*v3
 *.pbxuser
-*.xcworkspace
-xcuserdata
+*.app*
+*.DS_*
+._*.*
 
-# svn & cvs
-.svn
-CVS
+.svn/
+obj/
+bin/
+build/
+!data/
+xcuserdata/
+
+ipch/
+*.suo
+*.opensdf
+*.vcxproj.user
+
+*.obj
+*.tlog
+*.sdf
+*.pdb
+*.idb
+*.pch
+Debug/
+Release/
+
+
+*~.xml

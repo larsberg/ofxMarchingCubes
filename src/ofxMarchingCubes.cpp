@@ -24,8 +24,7 @@ void ofxMarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount)
 	up.set(0,1,0);
 	
 	float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
-	boundryBox.assign(boxVerts,boxVerts+72);
-	
+	boundaryVbo.setVertexData( boxVerts, 3, 24, GL_STATIC_DRAW );
 	
 	setResolution( 10, 10, 10 );
 	maxVertexCount = 150000;
@@ -69,12 +68,12 @@ void ofxMarchingCubes::update(float _threshold){
 
 void ofxMarchingCubes::draw( GLenum renderType )
 {
-	glPushMatrix();
-	glMultMatrixf( transform.getPtr() );
+	ofPushMatrix();
+	ofMultMatrix( transform.getPtr() );
 	
 	vbo.draw( renderType, 0, vertexCount );
 
-	glPopMatrix();
+	ofPopMatrix();
 }
 
 void ofxMarchingCubes::polygonise( int i, int j, int k ){
@@ -244,6 +243,8 @@ void ofxMarchingCubes::setGridPoints( float _x, float _y, float _z){
 			}
 		}
 	}
+
+	gridPointsVbo.setVertexData( gridPoints[0].getPtr(), 3, gridPoints.size(), GL_STATIC_DRAW );
 }
 
 
@@ -256,26 +257,20 @@ void ofxMarchingCubes::drawWireframe(){
 
 void ofxMarchingCubes::drawGrid( bool drawGridPoints){
 	
-	glPushMatrix();
-	glMultMatrixf( transform.getPtr() );
+	ofPushMatrix();
+	ofMultMatrix( transform.getPtr() );
 	
 	if(drawGridPoints){
-		glColor3f(.5,.5,.5);
+		ofSetColor(128);
 		glPointSize(1);
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_FLOAT, sizeof(gridPoints[0]), &gridPoints[0].x);
-		glDrawArrays(GL_POINTS, 0, (int)gridPoints.size());
-		glDisableClientState(GL_VERTEX_ARRAY);
+		gridPointsVbo.draw(GL_POINTS, 0, gridPointsVbo.getNumVertices());
 	}
 	
-	glColor3f(1,1,1);
-	glLineWidth(1.5);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, &boundryBox[0]);
-	glDrawArrays(GL_LINES, 0, (int)boundryBox.size()/3 );
-	glDisableClientState(GL_VERTEX_ARRAY);
+	ofColor(255);
+	ofSetLineWidth(1.5);
+	boundaryVbo.draw(GL_LINES, 0, boundaryVbo.getNumVertices());
 	
-	glPopMatrix();
+	ofPopMatrix();
 }
 
 void ofxMarchingCubes::setIsoValue( int x, int y, int z, float value){

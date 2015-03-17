@@ -1,19 +1,18 @@
 #include "ofMain.h"
 #include "ofApp.h"
-#include "ofAppGlutWindow.h"
 
 //========================================================================
-int main( ){
+int main()
+{
+#ifdef USE_PROGRAMMABLE_PIPELINE
+	ofGLWindowSettings settings;
+	settings.setGLVersion(4,3);
+	settings.width = 1024;
+	settings.height = 768;
+	ofCreateWindow(settings);
+#else
+	ofSetupOpenGL(1024, 768, OF_WINDOW);
+#endif
 
-    ofAppGlutWindow window;
-	
-	window.setGlutDisplayString("rgba double samples>=4 depth");
-	
-	ofSetupOpenGL(&window, 1024,768, OF_WINDOW);			// <-------- setup the GL context
-
-	// this kicks off the running of my app
-	// can be OF_WINDOW or OF_FULLSCREEN
-	// pass in width and height too:
-	ofRunApp( new ofApp());
-
+	ofRunApp(new ofApp());
 }

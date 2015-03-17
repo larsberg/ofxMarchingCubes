@@ -1,8 +1,9 @@
 #pragma once
 
+#define USE_PROGRAMMABLE_PIPELINE 1
+
 #include "ofMain.h"
 #include "ofxMarchingCubes.h"
-
 
 class ofApp : public ofBaseApp{
 

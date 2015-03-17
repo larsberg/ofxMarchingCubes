@@ -17,7 +17,12 @@ void ofApp::setup(){
 
 	mc.setSmoothing( false );
 		
-	normalShader.load("shaders/normalShader");
+	if (ofIsGLProgrammableRenderer()) {
+		normalShader.load("shaders_gl3/normalShader");
+	} 
+	else {
+		normalShader.load("shaders/normalShader");
+	}
 }
 
 //--------------------------------------------------------------
@@ -80,6 +85,10 @@ void ofApp::draw(){
 	
 	//draw the mesh
 	normalShader.begin();
+	if (ofIsGLProgrammableRenderer()) {
+		ofMatrix4x4 normalMatrix = ofMatrix4x4::getTransposedOf((ofGetCurrentMatrix(OF_MATRIX_MODELVIEW)).getInverse());
+		normalShader.setUniformMatrix4f("uNormalMatrix", normalMatrix);
+	}
 
 	wireframe?	mc.drawWireframe() : mc.draw();
 	
